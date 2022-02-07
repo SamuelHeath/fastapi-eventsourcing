@@ -19,29 +19,29 @@ class EventType(str, enum.Enum):
     UPDATED = "UPDATED"
 
 
-class TodoItemEvent(Event):
+class WalletEvent(Event):
     title: str
     type: EventType
 
 
-class TodoItemCreatedEvent(TodoItemEvent):
+class WalletCreatedEvent(WalletEvent):
     type: str = EventType.CREATED
 
 
-class TodoItemUpdatedEvent(TodoItemEvent):
+class WalletUpdatedEvent(WalletEvent):
     type: str = EventType.UPDATED
 
 
-class TodoItemBase(BaseModel):
+class WalletEventBase(BaseModel):
     title: str
 
 
-class TodoItemCreate(TodoItemBase):
+class WalletEventCreate(WalletEventBase):
     pass
 
 
-class TodoItem(TodoItemBase):
-    id: str
+class Wallet(WalletEventBase):
+    entity_id: str
 
     class Config:
         orm_mode = True
