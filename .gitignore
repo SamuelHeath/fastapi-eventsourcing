@@ -1,3 +1,4 @@
 /deploy/terraform.tfstate.d/
 .idea/
 /venv/
+**/test.db

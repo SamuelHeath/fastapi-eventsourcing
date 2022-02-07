@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.params import Depends
 from sqlalchemy.orm import Session
+from starlette import status
 
 from app import domain
 from app import models
@@ -26,23 +27,23 @@ def get_db():
 #     return get_all_items(db=db)
 
 
-@app.post("/wallet", response_model=Wallet)
+@app.post("/wallet", response_model=Wallet, status_code=status.HTTP_201_CREATED)
 def handle_create(item: WalletEventCreate, db: Session = Depends(get_db)):
     model = domain.WalletDomainModel(db=db)
     model.handle(WalletCreatedEvent(title=item.title))
     return model.get_schema()
 
 
-@app.get("/wallet/{todo_uuid}", response_model=Wallet)
-def handle_id(todo_uuid: str, db: Session = Depends(get_db)):
+@app.get("/wallet/{wallet_id}", response_model=Wallet, status_code=status.HTTP_200_OK)
+def handle_id(wallet_id: str, db: Session = Depends(get_db)):
     model = domain.WalletDomainModel(db=db, item_id=todo_uuid)
-    model.load_state(todo_uuid)
+    model.load_state(wallet_id)
     return model.get_schema()
 
 
-@app.put("/wallet/{todo_uuid}", response_model=Wallet)
-def handle_update(todo_uuid: str, item: Wallet, db: Session = Depends(get_db)):
-    model = domain.WalletDomainModel(db=db, item_id=item.id)
-    model.load_state(todo_uuid)
+@app.put("/wallet/{wallet_id}", response_model=Wallet, status_code=status.HTTP_200_OK)
+def handle_update(wallet_id: str, item: Wallet, db: Session = Depends(get_db)):
+    model = domain.WalletDomainModel(db=db, item_id=item.entity_id)
+    model.load_state(wallet_id)
     model.handle(WalletUpdatedEvent(title=item.title))
     return model.get_schema()
