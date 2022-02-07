@@ -40,3 +40,10 @@ class WalletEventWriteRepository:
         self._db.commit()
         self._db.refresh(item)
         return item
+
+    def deposit_amount(self, item_id: str, event: schemas.WalletDepositEvent):
+        item = models.WalletEvent(uuid=event.uuid, entity_id=item_id, data=event.json(exclude={'uuid'}))
+        self._db.add(item)
+        self._db.commit()
+        self._db.refresh(item)
+        return item

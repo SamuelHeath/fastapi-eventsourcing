@@ -1,11 +1,15 @@
+import uuid
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from app import models
 from app.database import Base
+from app.domain import WalletDomainModel
 from app.main import app, get_db
-from app.schemas import WalletEventCreate, Wallet
+from app.schemas import WalletEventCreate, Wallet, WalletCreatedEvent, WalletDepositEvent
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -30,6 +34,19 @@ def cleanup():
     Base.metadata.drop_all(bind=engine)
 
 
+@pytest.fixture()
+def create_wallet(cleanup):
+    event = WalletCreatedEvent(title="Example Wallet")
+    _wallet = models.WalletEvent(uuid=event.uuid, entity_id=str(uuid.uuid4()), data=event.json(exclude={"uuid"}))
+    db = next(override_get_db())
+    db.add(_wallet)
+    db.commit()
+    db.refresh(_wallet)
+    model = WalletDomainModel(db=db, item_id=_wallet.entity_id)
+    model.load_state()
+    yield model.get_schema()
+
+
 app.dependency_overrides[get_db] = override_get_db
 
 client = TestClient(app)
@@ -43,12 +60,18 @@ def test_create_wallet(cleanup):
     assert Wallet(**response.json()).dict(include={"title"}) == {"title": wec.title}
 
 
-def test_update_wallet(cleanup):
-    wec = WalletEventCreate(title="test_user wallet")
-    response = client.post("/wallet", data=wec.json())
-
-    wallet = Wallet(**response.json())
+def test_update_wallet(cleanup, create_wallet):
+    wallet = create_wallet
     wallet.title = "New Wallet"
     response = client.put(f"/wallet/{wallet.entity_id}", data=wallet.json())
     assert response.status_code == 200
     assert Wallet(**response.json()).dict(include={"title"}) == {"title": wallet.title}
+
+
+def test_deposit_wallet(cleanup, create_wallet):
+    wallet = create_wallet
+    wde = WalletDepositEvent(amount=50.0)
+    response = client.post(f"/wallet/{wallet.entity_id}/deposit", data=wde.json())
+
+    assert response.status_code == 201
+    assert Wallet(**response.json()).dict(include={"amount"}) == {"amount": 50.0}

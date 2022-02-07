@@ -12,6 +12,7 @@ class WalletDomainModel:
     def __init__(self, db: Session, item_id=None):
         self._id = item_id
         self._title = None
+        self._amount = 0.0
         self._read_repository = WalletEventReadRepository(db=db)
         self._write_repository = WalletEventWriteRepository(db=db)
 
@@ -29,16 +30,21 @@ class WalletDomainModel:
 
     def apply(self, event: models.WalletEvent):
         result = json.loads(event.data)
-        if result["type"] == schemas.EventType.CREATED:
+        _type = result["type"]
+        if _type == schemas.EventType.CREATED:
             self._apply(schemas.WalletCreatedEvent(**result))
-        elif result["type"] == schemas.EventType.UPDATED:
+        elif _type == schemas.EventType.UPDATED:
             self._apply(schemas.WalletUpdatedEvent(**result))
+        elif _type == schemas.EventType.DEPOSIT:
+            self._apply(schemas.WalletDepositEvent(**result))
 
     def _apply(self, event: schemas.WalletEvent, item_id=None):
         if item_id is not None:
             self._id = item_id
         if isinstance(event, schemas.WalletCreatedEvent) or isinstance(event, schemas.WalletUpdatedEvent):
             self._title = event.title
+        elif isinstance(event, schemas.WalletDepositEvent):
+            self._amount += event.amount
 
     def handle(self, event: schemas.WalletEvent):
         item = None
@@ -46,9 +52,11 @@ class WalletDomainModel:
             item = self._write_repository.create_todo_item(event=event)
         elif isinstance(event, schemas.WalletUpdatedEvent):
             item = self._write_repository.update_todo_item(item_id=self._id, event=event)
+        elif isinstance(event, schemas.WalletDepositEvent):
+            item = self._write_repository.deposit_amount(item_id=self._id, event=event)
 
         if item is not None:
             self._apply(event, item.entity_id)
 
     def get_schema(self):
-        return schemas.Wallet(title=self._title, entity_id=self._id)
+        return schemas.Wallet(title=self._title, entity_id=self._id, amount=self._amount)
