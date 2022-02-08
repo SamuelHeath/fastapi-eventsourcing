@@ -17,7 +17,8 @@ class Event(BaseModel):
 class EventType(str, enum.Enum):
     CREATED = "CREATED"
     UPDATED = "UPDATED"
-    DEPOSIT = "DEPOSIT"
+    DEBIT = "DEBIT"
+    CREDIT = "CREDIT"
 
 
 class WalletEvent(Event):
@@ -38,12 +39,12 @@ class WalletTransactionEvent(WalletEvent):
     amount: float
 
 
-class WalletDepositEvent(WalletTransactionEvent):
-    type = EventType.DEPOSIT
+class WalletDebitEvent(WalletTransactionEvent):
+    type = EventType.DEBIT
 
 
 class WalletCreditEvent(WalletTransactionEvent):
-    pass
+    type = EventType.CREDIT
 
 
 class WalletEventBase(BaseModel):
@@ -54,7 +55,11 @@ class WalletEventCreate(WalletEventBase):
     pass
 
 
-class WalletEventDeposit(BaseModel):
+class WalletEventDebit(BaseModel):
+    amount: float = 0.0
+
+
+class WalletEventCredit(BaseModel):
     amount: float = 0.0
 
 

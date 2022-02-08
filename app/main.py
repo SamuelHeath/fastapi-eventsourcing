@@ -6,7 +6,8 @@ from starlette import status
 from app import domain
 from app import models
 from app.database import SessionLocal, engine
-from app.schemas import Wallet, WalletEventCreate, WalletCreatedEvent, WalletUpdatedEvent, WalletDepositEvent, WalletEventDeposit
+from app.schemas import Wallet, WalletEventCreate, WalletCreatedEvent, WalletUpdatedEvent, WalletDebitEvent, WalletEventDebit, \
+    WalletEventCredit, WalletCreditEvent
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -50,8 +51,16 @@ def handle_update(wallet_id: str, item: Wallet, db: Session = Depends(get_db)):
 
 
 @app.post("/wallet/{wallet_id}/deposit", response_model=Wallet, status_code=status.HTTP_201_CREATED)
-def handle_id(wallet_id: str, deposit_event: WalletEventDeposit, db: Session = Depends(get_db)):
+def handle_id(wallet_id: str, deposit_event: WalletEventDebit, db: Session = Depends(get_db)):
     model = domain.WalletDomainModel(db=db, item_id=wallet_id)
     model.load_state(wallet_id)
-    model.handle(WalletDepositEvent(**deposit_event.dict()))
+    model.handle(WalletDebitEvent(**deposit_event.dict()))
+    return model.get_schema()
+
+
+@app.post("/wallet/{wallet_id}/credit", response_model=Wallet, status_code=status.HTTP_201_CREATED)
+def handle_id(wallet_id: str, deposit_event: WalletEventCredit, db: Session = Depends(get_db)):
+    model = domain.WalletDomainModel(db=db, item_id=wallet_id)
+    model.load_state(wallet_id)
+    model.handle(WalletCreditEvent(**deposit_event.dict()))
     return model.get_schema()

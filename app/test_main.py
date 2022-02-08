@@ -9,7 +9,7 @@ from app import models
 from app.database import Base
 from app.domain import WalletDomainModel
 from app.main import app, get_db
-from app.schemas import WalletEventCreate, Wallet, WalletCreatedEvent, WalletDepositEvent
+from app.schemas import WalletEventCreate, Wallet, WalletCreatedEvent, WalletDebitEvent, WalletCreditEvent
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -70,8 +70,23 @@ def test_update_wallet(cleanup, create_wallet):
 
 def test_deposit_wallet(cleanup, create_wallet):
     wallet = create_wallet
-    wde = WalletDepositEvent(amount=50.0)
+    wde = WalletDebitEvent(amount=50.0)
     response = client.post(f"/wallet/{wallet.entity_id}/deposit", data=wde.json())
 
     assert response.status_code == 201
     assert Wallet(**response.json()).dict(include={"amount"}) == {"amount": 50.0}
+
+
+def test_credit_wallet(cleanup, create_wallet):
+    wallet = create_wallet
+    wce = WalletCreditEvent(amount=50.0)
+    response = client.post(f"/wallet/{wallet.entity_id}/credit", data=wce.json())
+    assert response.status_code == 400
+
+    wde = WalletDebitEvent(amount=50.0)
+    client.post(f"/wallet/{wallet.entity_id}/deposit", data=wde.json())
+    wce = WalletCreditEvent(amount=45.0)
+    response = client.post(f"/wallet/{wallet.entity_id}/credit", data=wce.json())
+
+    assert response.status_code == 201
+    assert Wallet(**response.json()).dict(include={"amount"}) == {"amount": 5.0}

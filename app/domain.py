@@ -1,5 +1,6 @@
 import json
 
+from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app import models
@@ -35,16 +36,20 @@ class WalletDomainModel:
             self._apply(schemas.WalletCreatedEvent(**result))
         elif _type == schemas.EventType.UPDATED:
             self._apply(schemas.WalletUpdatedEvent(**result))
-        elif _type == schemas.EventType.DEPOSIT:
-            self._apply(schemas.WalletDepositEvent(**result))
+        elif _type == schemas.EventType.DEBIT:
+            self._apply(schemas.WalletDebitEvent(**result))
+        elif _type == schemas.EventType.CREDIT:
+            self._apply(schemas.WalletCreditEvent(**result))
 
     def _apply(self, event: schemas.WalletEvent, item_id=None):
         if item_id is not None:
             self._id = item_id
         if isinstance(event, schemas.WalletCreatedEvent) or isinstance(event, schemas.WalletUpdatedEvent):
             self._title = event.title
-        elif isinstance(event, schemas.WalletDepositEvent):
+        elif isinstance(event, schemas.WalletDebitEvent):
             self._amount += event.amount
+        elif isinstance(event, schemas.WalletCreditEvent):
+            self._amount -= event.amount
 
     def handle(self, event: schemas.WalletEvent):
         item = None
@@ -52,8 +57,12 @@ class WalletDomainModel:
             item = self._write_repository.create_todo_item(event=event)
         elif isinstance(event, schemas.WalletUpdatedEvent):
             item = self._write_repository.update_todo_item(item_id=self._id, event=event)
-        elif isinstance(event, schemas.WalletDepositEvent):
-            item = self._write_repository.deposit_amount(item_id=self._id, event=event)
+        elif isinstance(event, schemas.WalletDebitEvent):
+            item = self._write_repository.debit_amount(item_id=self._id, event=event)
+        elif isinstance(event, schemas.WalletCreditEvent):
+            if self._amount - event.amount < 0.0:
+                raise HTTPException(status_code=400, detail="Insufficient Funds")
+            item = self._write_repository.credit_amount(item_id=self._id, event=event)
 
         if item is not None:
             self._apply(event, item.entity_id)
