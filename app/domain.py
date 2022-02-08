@@ -9,7 +9,6 @@ from app.repository import WalletEventReadRepository, WalletEventWriteRepository
 
 
 class WalletDomainModel:
-
     def __init__(self, db: Session, item_id=None):
         self._id = item_id
         self._title = None
@@ -44,7 +43,9 @@ class WalletDomainModel:
     def _apply(self, event: schemas.WalletEvent, item_id=None):
         if item_id is not None:
             self._id = item_id
-        if isinstance(event, schemas.WalletCreateEvent) or isinstance(event, schemas.WalletUpdateEvent):
+        if isinstance(event, schemas.WalletCreateEvent) or isinstance(
+                event, schemas.WalletUpdateEvent
+        ):
             self._title = event.title
         elif isinstance(event, schemas.WalletDebitEvent):
             self._amount += event.amount
@@ -56,7 +57,9 @@ class WalletDomainModel:
         if isinstance(event, schemas.WalletCreateEvent):
             item = self._write_repository.create_todo_item(event=event)
         elif isinstance(event, schemas.WalletUpdateEvent):
-            item = self._write_repository.update_todo_item(item_id=self._id, event=event)
+            item = self._write_repository.update_todo_item(
+                item_id=self._id, event=event
+            )
         elif isinstance(event, schemas.WalletDebitEvent):
             item = self._write_repository.debit_amount(item_id=self._id, event=event)
         elif isinstance(event, schemas.WalletCreditEvent):
@@ -68,4 +71,6 @@ class WalletDomainModel:
             self._apply(event, item.entity_id)
 
     def get_schema(self):
-        return schemas.Wallet(title=self._title, entity_id=self._id, amount=self._amount)
+        return schemas.Wallet(
+            title=self._title, entity_id=self._id, amount=self._amount
+        )
