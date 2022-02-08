@@ -2,3 +2,4 @@
 .idea/
 /venv/
 **/test.db
+**/.pytest_cache
