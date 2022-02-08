@@ -25,12 +25,12 @@ class WalletEvent(Event):
     type: EventType
 
 
-class WalletCreatedEvent(WalletEvent):
+class WalletCreateEvent(WalletEvent):
     title: str
     type = EventType.CREATED
 
 
-class WalletUpdatedEvent(WalletEvent):
+class WalletUpdateEvent(WalletEvent):
     title: str
     type = EventType.UPDATED
 
@@ -51,15 +51,15 @@ class WalletEventBase(BaseModel):
     title: str
 
 
-class WalletEventCreate(WalletEventBase):
+class WalletCreatedEventIn(WalletEventBase):
     pass
 
 
-class WalletEventDebit(BaseModel):
+class WalletDebitEventIn(BaseModel):
     amount: float = 0.0
 
 
-class WalletEventCredit(BaseModel):
+class WalletCreditEventIn(BaseModel):
     amount: float = 0.0
 
 

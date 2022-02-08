@@ -27,14 +27,14 @@ class WalletEventWriteRepository:
         self._db.refresh(item)
         return item
 
-    def create_todo_item(self, event: schemas.WalletCreatedEvent):
+    def create_todo_item(self, event: schemas.WalletCreateEvent):
         item = self._append_event(event)
         item.entity_id = str(uuid.uuid4())
         self._db.commit()
         self._db.refresh(item)
         return item
 
-    def update_todo_item(self, item_id: str, event: schemas.WalletUpdatedEvent):
+    def update_todo_item(self, item_id: str, event: schemas.WalletUpdateEvent):
         item = models.WalletEvent(uuid=event.uuid, entity_id=item_id, data=event.json(exclude={'uuid'}))
         self._db.add(item)
         self._db.commit()

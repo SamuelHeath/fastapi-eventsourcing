@@ -9,7 +9,7 @@ from app import models
 from app.database import Base
 from app.domain import WalletDomainModel
 from app.main import app, get_db
-from app.schemas import WalletEventCreate, Wallet, WalletCreatedEvent, WalletDebitEvent, WalletCreditEvent
+from app.schemas import WalletCreatedEventIn, Wallet, WalletCreateEvent, WalletDebitEvent, WalletCreditEvent
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -36,7 +36,7 @@ def cleanup():
 
 @pytest.fixture()
 def create_wallet(cleanup):
-    event = WalletCreatedEvent(title="Example Wallet")
+    event = WalletCreateEvent(title="Example Wallet")
     _wallet = models.WalletEvent(uuid=event.uuid, entity_id=str(uuid.uuid4()), data=event.json(exclude={"uuid"}))
     db = next(override_get_db())
     db.add(_wallet)
@@ -53,7 +53,7 @@ client = TestClient(app)
 
 
 def test_create_wallet(cleanup):
-    wec = WalletEventCreate(title="test_user wallet")
+    wec = WalletCreatedEventIn(title="test_user wallet")
     response = client.post("/wallet", data=wec.json())
 
     assert response.status_code == 201

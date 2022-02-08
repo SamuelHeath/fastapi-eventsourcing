@@ -33,9 +33,9 @@ class WalletDomainModel:
         result = json.loads(event.data)
         _type = result["type"]
         if _type == schemas.EventType.CREATED:
-            self._apply(schemas.WalletCreatedEvent(**result))
+            self._apply(schemas.WalletCreateEvent(**result))
         elif _type == schemas.EventType.UPDATED:
-            self._apply(schemas.WalletUpdatedEvent(**result))
+            self._apply(schemas.WalletUpdateEvent(**result))
         elif _type == schemas.EventType.DEBIT:
             self._apply(schemas.WalletDebitEvent(**result))
         elif _type == schemas.EventType.CREDIT:
@@ -44,7 +44,7 @@ class WalletDomainModel:
     def _apply(self, event: schemas.WalletEvent, item_id=None):
         if item_id is not None:
             self._id = item_id
-        if isinstance(event, schemas.WalletCreatedEvent) or isinstance(event, schemas.WalletUpdatedEvent):
+        if isinstance(event, schemas.WalletCreateEvent) or isinstance(event, schemas.WalletUpdateEvent):
             self._title = event.title
         elif isinstance(event, schemas.WalletDebitEvent):
             self._amount += event.amount
@@ -53,9 +53,9 @@ class WalletDomainModel:
 
     def handle(self, event: schemas.WalletEvent):
         item = None
-        if isinstance(event, schemas.WalletCreatedEvent):
+        if isinstance(event, schemas.WalletCreateEvent):
             item = self._write_repository.create_todo_item(event=event)
-        elif isinstance(event, schemas.WalletUpdatedEvent):
+        elif isinstance(event, schemas.WalletUpdateEvent):
             item = self._write_repository.update_todo_item(item_id=self._id, event=event)
         elif isinstance(event, schemas.WalletDebitEvent):
             item = self._write_repository.debit_amount(item_id=self._id, event=event)

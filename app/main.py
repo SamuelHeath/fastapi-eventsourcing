@@ -6,8 +6,8 @@ from starlette import status
 from app import domain
 from app import models
 from app.database import SessionLocal, engine
-from app.schemas import Wallet, WalletEventCreate, WalletCreatedEvent, WalletUpdatedEvent, WalletDebitEvent, WalletEventDebit, \
-    WalletEventCredit, WalletCreditEvent
+from app.schemas import Wallet, WalletCreatedEventIn, WalletCreateEvent, WalletUpdateEvent, WalletDebitEvent, WalletDebitEventIn, \
+    WalletCreditEventIn, WalletCreditEvent
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -29,9 +29,9 @@ def get_db():
 
 
 @app.post("/wallet", response_model=Wallet, status_code=status.HTTP_201_CREATED)
-def handle_create(create_event: WalletEventCreate, db: Session = Depends(get_db)):
+def handle_create(create_event: WalletCreatedEventIn, db: Session = Depends(get_db)):
     model = domain.WalletDomainModel(db=db)
-    model.handle(WalletCreatedEvent(**create_event.dict()))
+    model.handle(WalletCreateEvent(**create_event.dict()))
     return model.get_schema()
 
 
@@ -46,12 +46,12 @@ def handle_id(wallet_id: str, db: Session = Depends(get_db)):
 def handle_update(wallet_id: str, item: Wallet, db: Session = Depends(get_db)):
     model = domain.WalletDomainModel(db=db, item_id=item.entity_id)
     model.load_state(wallet_id)
-    model.handle(WalletUpdatedEvent(title=item.title))
+    model.handle(WalletUpdateEvent(title=item.title))
     return model.get_schema()
 
 
 @app.post("/wallet/{wallet_id}/deposit", response_model=Wallet, status_code=status.HTTP_201_CREATED)
-def handle_id(wallet_id: str, deposit_event: WalletEventDebit, db: Session = Depends(get_db)):
+def handle_id(wallet_id: str, deposit_event: WalletDebitEventIn, db: Session = Depends(get_db)):
     model = domain.WalletDomainModel(db=db, item_id=wallet_id)
     model.load_state(wallet_id)
     model.handle(WalletDebitEvent(**deposit_event.dict()))
@@ -59,7 +59,7 @@ def handle_id(wallet_id: str, deposit_event: WalletEventDebit, db: Session = Dep
 
 
 @app.post("/wallet/{wallet_id}/credit", response_model=Wallet, status_code=status.HTTP_201_CREATED)
-def handle_id(wallet_id: str, deposit_event: WalletEventCredit, db: Session = Depends(get_db)):
+def handle_id(wallet_id: str, deposit_event: WalletCreditEventIn, db: Session = Depends(get_db)):
     model = domain.WalletDomainModel(db=db, item_id=wallet_id)
     model.load_state(wallet_id)
     model.handle(WalletCreditEvent(**deposit_event.dict()))
