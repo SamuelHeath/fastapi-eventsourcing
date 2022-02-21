@@ -11,6 +11,7 @@ from app.repository import WalletEventReadRepository, WalletEventWriteRepository
 class WalletDomainModel:
     def __init__(self, db: Session, item_id=None):
         self._id = item_id
+        self._sequence_id = 0
         self._title = None
         self._amount = 0.0
         self._read_repository = WalletEventReadRepository(db=db)
@@ -40,6 +41,8 @@ class WalletDomainModel:
         elif _type == schemas.EventType.CREDIT:
             self._apply(schemas.WalletCreditEvent(**result))
 
+        self._sequence_id = event.sequence_id
+
     def _apply(self, event: schemas.WalletEvent, item_id=None):
         if item_id is not None:
             self._id = item_id
@@ -58,14 +61,14 @@ class WalletDomainModel:
             item = self._write_repository.create_todo_item(event=event)
         elif isinstance(event, schemas.WalletUpdateEvent):
             item = self._write_repository.update_todo_item(
-                item_id=self._id, event=event
+                item_id=self._id, sequence_id=self._sequence_id, event=event
             )
         elif isinstance(event, schemas.WalletDebitEvent):
-            item = self._write_repository.debit_amount(item_id=self._id, event=event)
+            item = self._write_repository.debit_amount(item_id=self._id, sequence_id=self._sequence_id, event=event)
         elif isinstance(event, schemas.WalletCreditEvent):
             if self._amount - event.amount < 0.0:
                 raise HTTPException(status_code=400, detail="Insufficient Funds")
-            item = self._write_repository.credit_amount(item_id=self._id, event=event)
+            item = self._write_repository.credit_amount(item_id=self._id, sequence_id=self._sequence_id, event=event)
 
         if item is not None:
             self._apply(event, item.entity_id)

@@ -65,6 +65,7 @@ class WalletCreditEventIn(BaseModel):
 
 class Wallet(WalletEventBase):
     entity_id: str
+    sequence_id: int = 0
     amount: float = 0.0
 
     class Config:
