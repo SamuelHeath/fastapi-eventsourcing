@@ -6,7 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8080:8000"
     depends_on:
       - db
 
@@ -17,13 +17,18 @@ services:
       - POSTGRES_PASSWORD=test
       - POSTGRES_DB=todo
     ports:
-      - "5432:5432"
+      - "5433:5432"
     expose:
-      - 5432
+      - 5433
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:latest
+    container_name: "redis"
+
+
 volumes:
-     pgdata:
+  pgdata:
 
 

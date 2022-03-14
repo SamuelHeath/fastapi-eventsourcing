@@ -12,4 +12,4 @@ class WalletEvent(Base):
     sequence_id = Column(Integer, default=0)
     data = Column(JSON)
 
-    UniqueConstraint('entity_id', 'sequence_id', name='entity_sequence_uniq')
+    UniqueConstraint("entity_id", "sequence_id", name="entity_sequence_uniq")

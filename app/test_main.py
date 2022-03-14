@@ -2,13 +2,13 @@ import uuid
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app import models
-from app.database import Base
+from app.cache import InMemoryCache
+from app.database import Base, engine
 from app.domain import WalletDomainModel
-from app.main import app, get_db
+from app.main import app, get_db, get_cache
 from app.schemas import (
     WalletCreatedEventIn,
     Wallet,
@@ -17,11 +17,6 @@ from app.schemas import (
     WalletCreditEvent,
 )
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -31,6 +26,11 @@ def override_get_db():
         yield db
     finally:
         db.close()
+
+
+def override_get_cache():
+    cache = InMemoryCache()
+    yield cache
 
 
 @pytest.fixture(scope="function")
@@ -52,10 +52,11 @@ def create_wallet(cleanup):
     db.refresh(_wallet)
     model = WalletDomainModel(db=db, item_id=_wallet.entity_id)
     model.load_state()
-    yield model.get_schema()
+    yield model.get_state()
 
 
 app.dependency_overrides[get_db] = override_get_db
+app.dependency_overrides[get_cache] = override_get_cache
 
 client = TestClient(app)
 

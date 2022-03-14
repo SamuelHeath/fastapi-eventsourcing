@@ -6,3 +6,4 @@ sqlalchemy~=1.4.31
 
 starlette~=0.14.2
 pydantic~=1.9.0
+redis>=4.2.0rc2
